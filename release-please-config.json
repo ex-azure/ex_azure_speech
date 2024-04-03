@@ -1,0 +1,10 @@
+{
+  "release-type": "elixir",
+  "bump-minor-pre-major": true,
+  "packages": {
+    ".": {
+      "package-name": "ex_azure_speech",
+      "changelogPath": "CHANGELOG.md"
+    }
+  }
+}
