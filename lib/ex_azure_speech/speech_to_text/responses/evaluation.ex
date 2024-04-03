@@ -1,4 +1,4 @@
-defmodule ExAzureSpeech.SpeechToText.Responses.Phrase do
+defmodule ExAzureSpeech.SpeechToText.Responses.Evaluation do
   @moduledoc """
   Phrase details from the Speech-To-Text API.
   """
@@ -11,7 +11,8 @@ defmodule ExAzureSpeech.SpeechToText.Responses.Phrase do
     :display,
     :display_text,
     :words,
-    :display_words
+    :display_words,
+    :pronunciation_assessment
   ]
 
   @type t :: %__MODULE__{
@@ -22,6 +23,8 @@ defmodule ExAzureSpeech.SpeechToText.Responses.Phrase do
           display: String.t() | nil,
           display_text: String.t() | nil,
           words: [ExAzureSpeech.SpeechToText.Responses.Word.t()],
-          display_words: [ExAzureSpeech.SpeechToText.Responses.Word.t()]
+          display_words: [ExAzureSpeech.SpeechToText.Responses.Word.t()],
+          pronunciation_assessment:
+            ExAzureSpeech.SpeechToText.Responses.PronunciationAssessment.t() | nil
         }
 end

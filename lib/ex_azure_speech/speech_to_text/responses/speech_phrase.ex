@@ -26,7 +26,7 @@ defmodule ExAzureSpeech.SpeechToText.Responses.SpeechPhrase do
           duration: integer() | nil,
           offset: integer() | nil,
           primary_language: ExAzureSpeech.SpeechToText.Responses.PrimaryLanguage.t() | nil,
-          n_best: [ExAzureSpeech.SpeechToText.Responses.Phrase.t()] | nil,
+          n_best: [ExAzureSpeech.SpeechToText.Responses.Evaluation.t()] | nil,
           speaker_id: String.t() | nil
         }
 end
