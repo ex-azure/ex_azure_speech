@@ -19,35 +19,40 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    
     - name: Set up Elixir
       uses: erlef/setup-beam@v1
       with:
         elixir-version: ${{ matrix.elixir }}
         otp-version: ${{ matrix.otp }}
 
-    - name: Restore dependencies cache
-      uses: actions/cache@v3
+    - name: Restore deps and _build cache
+      id: mix-deps
+      uses: actions/cache@v4
       with:
-        path: deps
+        path: |
+          deps
+          _build
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
         restore-keys: ${{ runner.os }}-mix-
 
+    - name: PLT Cache
+      uses: actions/cache@v4
+      id: plt-cache
+      with:
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          path: |
+            ./_plts/core
+
     - name: Fetch and Compile Dependencies
+      if: steps.mix-deps.outputs.cache-hit != 'true'
       run: |
         mix deps.get
         mix deps.compile
 
-    - name: Retrieve (Dialyzer) PLT Cache
-      uses: actions/cache@v3
-      id: plt-cache
-      with:
-        path: priv/plts
-        key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-
     - name: Create PLTs
       if: steps.plt-cache.outputs.cache-hit != 'true'
       run: |
-        mkdir -p priv/plts
         mix dialyzer --plt
 
     - name: Run Checks

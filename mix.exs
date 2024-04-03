@@ -14,7 +14,7 @@ defmodule ExAzureSpeech.MixProject do
       test_coverage: [tool: ExCoveralls],
       deps: deps(),
       dialyzer: [
-        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+        plt_core_path: "_plts/core"
       ],
       source_url: "https://github.com/YgorCastor/ex_azure_speech.git",
       homepage_url: "https://github.com/YgorCastor/ex_azure_speech.git",
