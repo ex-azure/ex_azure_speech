@@ -134,7 +134,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
 
     :ok
   rescue
-    _ -> {:error, FailedToSendMessage.exception(%{name: "AudioMessage"})}
+    _ -> {:error, FailedToSendMessage.exception(name: "AudioMessage")}
   end
 
   defp wait_for_response(pid) do

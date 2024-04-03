@@ -5,6 +5,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
 
   alias ExAzureSpeech.SpeechToText.Recognizer
   alias ExAzureSpeech.SpeechToText.SpeechContextConfig
+  alias ExAzureSpeech.Common.BitUtils
 
   describe "recognize_once/3" do
     setup do
@@ -34,6 +35,25 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
                 speaker_id: nil
               }} =
                Recognizer.recognize_once(:file, file_path)
+    end
+
+    test "recognize from audio bytelist", %{file_path: file_path} do
+      {:ok, audio} = File.read(file_path)
+      stream = BitUtils.chunks(audio, 32_768)
+
+      assert {:ok,
+              %ExAzureSpeech.SpeechToText.Responses.SpeechPhrase{
+                channel: 0,
+                display_text: "By voice is my passport verify me.",
+                duration: _,
+                id: _,
+                n_best: nil,
+                offset: _,
+                primary_language: nil,
+                recognition_status: "Success",
+                speaker_id: nil
+              }} =
+               Recognizer.recognize_once(:stream, stream)
     end
 
     test "recognizes speech from audio file with pronunciation assessment", %{
