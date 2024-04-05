@@ -15,7 +15,7 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
            terminate_child: fn _, _ -> :ok end
          ]},
         {Websocket, [],
-         [process_and_wait: fn _, _, _ -> {:ok, %{"RecognitionStatus" => "Success"}} end]}
+         [process_and_wait: fn _, _ -> {:ok, %{"RecognitionStatus" => "Success"}} end]}
       ]) do
         assert {:ok, %{"RecognitionStatus" => "Success"}} =
                  Recognizer.recognize_once(
@@ -24,7 +24,7 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
                  )
 
         assert called(DynamicSupervisor.start_child(:_, :_))
-        assert called(Websocket.process_and_wait(:_, :_, :_))
+        assert called(Websocket.process_and_wait(:_, :_))
         assert called(DynamicSupervisor.terminate_child(:_, :_))
       end
     end
@@ -36,7 +36,7 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
            start_child: fn _, _ -> {:ok, self()} end,
            terminate_child: fn _, _ -> :ok end
          ]},
-        {Websocket, [], [process_and_wait: fn _, _, _ -> {:error, %{}} end]}
+        {Websocket, [], [process_and_wait: fn _, _ -> {:error, %{}} end]}
       ]) do
         assert {:error, %{}} =
                  Recognizer.recognize_once(
@@ -45,7 +45,7 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
                  )
 
         assert called(DynamicSupervisor.start_child(:_, :_))
-        assert called(Websocket.process_and_wait(:_, :_, :_))
+        assert called(Websocket.process_and_wait(:_, :_))
         assert called(DynamicSupervisor.terminate_child(:_, :_))
       end
     end

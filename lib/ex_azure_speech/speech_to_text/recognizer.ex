@@ -27,12 +27,12 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
           speech_context_opts: SpeechContextConfig.t() | nil
         ]
 
-  defmacrop with_connection(opts, do: block) do
+  defmacrop with_connection(socket_opts, context_opts, do: block) do
     quote do
       {:ok, pid} =
         DynamicSupervisor.start_child(
           {:via, PartitionSupervisor, {__MODULE__, self()}},
-          {Websocket, unquote(opts)}
+          {Websocket, {unquote(socket_opts), unquote(context_opts)}}
         )
 
       var!(pid) = pid
@@ -50,8 +50,6 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
 
   @doc """
   Synchronously recognizes speech from the given audio input. This function accepts either a file path or a stream as input.
-
-
   """
   @spec recognize_once(:file | :stream, String.t() | Enumerable.t(), Recognizer.opts()) ::
           {:ok, SpeechPhrase.t()} | {:error, any}
@@ -66,8 +64,8 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
 
     with {:ok, socket_opts} <- SocketConfig.new(socket_opts),
          {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
-      with_connection(socket_opts) do
-        Websocket.process_and_wait(pid, audio, speech_context_opts)
+      with_connection(socket_opts, speech_context_opts) do
+        Websocket.process_and_wait(pid, audio)
       end
     end
   end

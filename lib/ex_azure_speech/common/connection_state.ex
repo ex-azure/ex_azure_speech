@@ -7,6 +7,7 @@ defmodule ExAzureSpeech.Common.ConnectionState do
             state: :disconnected,
             response: nil,
             waiting_for_response: [],
+            context: nil,
             command_queue: :queue.new(),
             current_stage: nil,
             telemetry: []
@@ -34,6 +35,7 @@ defmodule ExAzureSpeech.Common.ConnectionState do
           response: nil | {:error, term()} | {atom(), term()},
           waiting_for_response: list(pid()),
           command_queue: :queue.queue(),
+          context: nil | map(),
           current_stage: nil | atom(),
           telemetry: list({String.t(), String.t()})
         }

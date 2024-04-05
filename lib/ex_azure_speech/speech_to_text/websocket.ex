@@ -61,13 +61,19 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   @doc """
   Opens a WebSocket connection with the Azure Cognitive Services Speech-to-Text service.
   """
-  @spec open_connection(SocketConfig.t()) :: {:ok, pid()} | {:error, any()}
-  def open_connection(opts) do
+  @spec open_connection(SocketConfig.t(), SpeechContextConfig.t()) ::
+          {:ok, pid()} | {:error, any()}
+  def open_connection(opts, context_config) do
     with connection_id <- opts[:connection_id],
+         context <- SpeechContextMessage.new(context_config),
          {:ok, token} <- AuthClient.auth(opts) do
       start_link(
         uri: SocketConfig.get_uri(opts),
-        state: %ConnectionState{state: :connecting, connection_id: connection_id},
+        state: %ConnectionState{
+          state: :connecting,
+          connection_id: connection_id,
+          context: context
+        },
         opts: [
           headers: base_headers(opts, connection_id, token)
         ]
@@ -78,7 +84,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   @doc """
   Synchronously processes the audio input and waits for the recognition response.
   """
-  @spec process_and_wait(websocket_pid :: pid, audio :: Enumerable.t(), SpeechContextConfig.t()) ::
+  @spec process_and_wait(websocket_pid :: pid, audio :: Enumerable.t()) ::
           {:ok, SpeechPhrase.t()}
           | {:error,
              WebsocketConnectionNeverStarted.t()
@@ -87,10 +93,10 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
              | InvalidResponse.t()
              | SpeechRecognitionFailed.t()
              | Timeout.t()}
-  def process_and_wait(pid, audio, opts) do
+  def process_and_wait(pid, audio) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
-         {:ok, _} <- send_context_message(pid, opts),
+         {:ok, _} <- update_connection_context(pid),
          :ok <- stream_audio(pid, audio) do
       wait_for_response(pid)
     end
@@ -114,10 +120,10 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     _ -> {:error, FailedToSendMessage.exception(%{name: "SpeechConfigMessage"})}
   end
 
-  defp send_context_message(pid, opts) do
-    {:ok, send(pid, {:command, SpeechContextMessage.new(opts)})}
+  defp update_connection_context(pid) do
+    {:ok, send(pid, {:internal, :update_connection_context})}
   rescue
-    _ -> {:error, FailedToSendMessage.exception(name: "SpeechContextMessage")}
+    _ -> {:error, FailedToSendMessage.exception(name: "UpdateConnectionContext")}
   end
 
   defp stream_audio(pid, audio) do
@@ -181,6 +187,13 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
         process_command(command, %ConnectionState{state | command_queue: command_queue})
     end
   end
+
+  @doc false
+  def handle_info(
+        {:internal, :update_connection_context},
+        %ConnectionState{} = state
+      ),
+      do: handle_info({:command, state.context}, state)
 
   @doc false
   def handle_info({:command, message}, state) do
@@ -303,10 +316,10 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     ]
 
   @doc false
-  def child_spec(opts) do
+  def child_spec({socket_opts, context_opts}) do
     %{
-      id: opts[:connection_id],
-      start: {__MODULE__, :open_connection, [opts]}
+      id: socket_opts[:connection_id],
+      start: {__MODULE__, :open_connection, [socket_opts, context_opts]}
     }
   end
 end

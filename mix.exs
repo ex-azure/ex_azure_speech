@@ -79,6 +79,10 @@ defmodule ExAzureSpeech.MixProject do
     ]
   end
 
+  def cli do
+    [preferred_envs: ["test.integration": :test]]
+  end
+
   defp description() do
     "The non-official Elixir implementation for Azure Cognitive Services Speech SDK. This project aims to provide all the functionalities described in the official sdk"
   end

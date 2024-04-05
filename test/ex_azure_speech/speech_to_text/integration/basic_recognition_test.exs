@@ -1,5 +1,5 @@
 defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   @moduletag :integration
 
@@ -7,20 +7,20 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
   alias ExAzureSpeech.SpeechToText.SpeechContextConfig
   alias ExAzureSpeech.Common.BitUtils
 
+  setup_all do
+    children = [
+      Recognizer
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one)
+
+    %{
+      file_path: "priv/samples/myVoiceIsMyPassportVerifyMe01.wav",
+      expected_text: "My voice is my passport. Verify me."
+    }
+  end
+
   describe "recognize_once/3" do
-    setup do
-      children = [
-        Recognizer
-      ]
-
-      Supervisor.start_link(children, strategy: :one_for_one)
-
-      %{
-        file_path: "priv/samples/myVoiceIsMyPassportVerifyMe01.wav",
-        expected_text: "My voice is my passport. Verify me."
-      }
-    end
-
     test "recognizes speech from audio file", %{file_path: file_path} do
       assert {:ok,
               %ExAzureSpeech.SpeechToText.Responses.SpeechPhrase{

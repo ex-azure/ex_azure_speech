@@ -6,6 +6,29 @@ defmodule ExAzureSpeech.SpeechToText.SpeechContextConfig do
   """
   @moduledoc section: :speech_to_text
   @schema NimbleOptions.new!(
+            phrase_detection: [
+              type: :keyword_list,
+              required: false,
+              doc: """
+              Specifies details about the phrase detection.
+              """,
+              keys: [
+                recognition_mode: [
+                  type: {:in, [:interactive, :conversation, :dictation]},
+                  required: false,
+                  doc: """
+                  The recognition mode to be used. `:interactive` is optimized for short phrases, `:conversation` is optimized for conversational speech, and `:dictation` is optimized for long-form speech.
+                  """
+                ],
+                speech_segmentation_silence_ms: [
+                  type: :integer,
+                  required: false,
+                  doc: """
+                  The minimum length of silence that indicates the end of a phrase.  
+                  """
+                ]
+              ]
+            ],
             speech_assessment: [
               type: :keyword_list,
               required: false,
@@ -78,6 +101,9 @@ defmodule ExAzureSpeech.SpeechToText.SpeechContextConfig do
   ## Example Configuration  
     
       [
+        phrase_detection: [
+          speech_segmentation_silence_ms: 500
+        ],
         speech_assessment: [
           reference_text: "The quick brown fox jumps over the lazy dog.",
           grading_system: :five_point,
