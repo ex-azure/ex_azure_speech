@@ -20,6 +20,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   require WaitForIt
   require Logger
 
+  alias ExAzureSpeech.Common.Guid
   alias ExAzureSpeech.Auth.Client, as: AuthClient
   alias ExAzureSpeech.Common.{ConnectionState, HeaderNames, SocketMessage}
   alias ExAzureSpeech.Common.Errors.{InvalidMessage, InvalidResponse, Timeout}
@@ -246,12 +247,16 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
          {:internal, :notify_end},
          %ConnectionState{response: response} = state
        ) do
-    Enum.each(state.waiting_for_response, fn pid ->
-      send(pid, response)
-    end)
+    # Enum.each(state.waiting_for_response, fn pid ->
+    #   send(pid, response)
+    # end)
+    #
 
-    {:close, 1000, "Normal closure",
-     %ConnectionState{state | state: :disconnected, waiting_for_response: []}}
+    # {:close, 1000, "Normal closure",
+    #  %ConnectionState{state | state: :disconnected, waiting_for_response: []}}
+    handle_info({:command, state.context}, %ConnectionState{
+      connection_id: Guid.create_no_dash_guid()
+    })
   end
 
   defp handle_response(%SocketMessage{headers: headers} = message, state),
@@ -293,8 +298,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     {:ok,
      %ConnectionState{
        state
-       | state: :disconnecting,
-         current_stage: :turn_end,
+       | current_stage: :turn_end,
          command_queue: :queue.in({:internal, :notify_end}, state.command_queue)
      }}
   end

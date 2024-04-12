@@ -9,12 +9,14 @@ defmodule ExAzureSpeech.Common.ConnectionState do
             waiting_for_response: [],
             context: nil,
             command_queue: :queue.new(),
+            audio_stream: nil,
             current_stage: nil,
             telemetry: []
 
   alias __MODULE__
 
   alias ExAzureSpeech.Common.Guid
+  alias ExAzureSpeech.Common.ReplayableAudioStream
 
   @typedoc """
   All possible states for a connection.
@@ -36,6 +38,7 @@ defmodule ExAzureSpeech.Common.ConnectionState do
           waiting_for_response: list(pid()),
           command_queue: :queue.queue(),
           context: nil | map(),
+          audio_stream: nil | ReplayableAudioStream.t(),
           current_stage: nil | atom(),
           telemetry: list({String.t(), String.t()})
         }

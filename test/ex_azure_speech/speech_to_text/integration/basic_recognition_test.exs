@@ -16,6 +16,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
 
     %{
       file_path: "priv/samples/myVoiceIsMyPassportVerifyMe01.wav",
+      longform_file_path: "priv/samples/large_article.wav",
       expected_text: "My voice is my passport. Verify me."
     }
   end
@@ -375,6 +376,16 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
                 speaker_id: nil
               }} =
                Recognizer.recognize_once(:file, file_path, speech_context_opts: opts)
+    end
+
+    test "should parse longform content correctly", %{longform_file_path: file_path} do
+      Recognizer.recognize_once(:file, file_path,
+        speech_context_opts: [
+          phrase_detection: [
+            speech_segmentation_silence_ms: 1000
+          ]
+        ]
+      )
     end
   end
 end
