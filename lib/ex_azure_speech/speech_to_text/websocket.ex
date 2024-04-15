@@ -25,6 +25,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   alias ExAzureSpeech.Common.{ConnectionState, HeaderNames, SocketMessage}
   alias ExAzureSpeech.Common.Errors.{InvalidMessage, InvalidResponse, Timeout}
   alias ExAzureSpeech.Common.Messages.{AudioMessage, SpeechConfigMessage}
+  alias ExAzureSpeech.Common.ReplayableAudioStream
   alias ExAzureSpeech.SpeechToText.{SocketConfig, SpeechContextConfig}
 
   alias ExAzureSpeech.SpeechToText.Errors.{
@@ -34,7 +35,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   }
 
   alias ExAzureSpeech.SpeechToText.Messages.SpeechContextMessage
-  alias ExAzureSpeech.SpeechToText.Responses.SpeechPhrase
+  alias ExAzureSpeech.SpeechToText.Responses.{EndDetected, SpeechPhrase}
 
   alias ExAzureSpeech.Common.Protocols.Json
 
@@ -62,9 +63,9 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   @doc """
   Opens a WebSocket connection with the Azure Cognitive Services Speech-to-Text service.
   """
-  @spec open_connection(SocketConfig.t(), SpeechContextConfig.t()) ::
+  @spec open_connection(SocketConfig.t(), SpeechContextConfig.t(), Enumerable.t()) ::
           {:ok, pid()} | {:error, any()}
-  def open_connection(opts, context_config) do
+  def open_connection(opts, context_config, stream) do
     with connection_id <- opts[:connection_id],
          context <- SpeechContextMessage.new(context_config),
          {:ok, token} <- AuthClient.auth(opts) do
@@ -73,7 +74,15 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
         state: %ConnectionState{
           state: :connecting,
           connection_id: connection_id,
-          context: context
+          context: context,
+          audio_stream: %ReplayableAudioStream{
+            buffer: <<>>,
+            stream: stream,
+            buffer_offset: 0,
+            last_read_offset: 0,
+            bytes_per_second: 16_000 * 16 / 8,
+            chunk_size: 32_768
+          }
         },
         opts: [
           headers: base_headers(opts, connection_id, token)
@@ -85,7 +94,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   @doc """
   Synchronously processes the audio input and waits for the recognition response.
   """
-  @spec process_and_wait(websocket_pid :: pid, audio :: Enumerable.t()) ::
+  @spec process_and_wait(websocket_pid :: pid) ::
           {:ok, SpeechPhrase.t()}
           | {:error,
              WebsocketConnectionNeverStarted.t()
@@ -94,11 +103,11 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
              | InvalidResponse.t()
              | SpeechRecognitionFailed.t()
              | Timeout.t()}
-  def process_and_wait(pid, audio) do
+  def process_and_wait(pid) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
          {:ok, _} <- update_connection_context(pid),
-         :ok <- stream_audio(pid, audio) do
+         {:ok, _} <- start_stream(pid) do
       wait_for_response(pid)
     end
   end
@@ -122,24 +131,13 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   end
 
   defp update_connection_context(pid) do
-    {:ok, send(pid, {:internal, :update_connection_context})}
+    {:ok, send(pid, {:command, :update_connection_context})}
   rescue
     _ -> {:error, FailedToSendMessage.exception(name: "UpdateConnectionContext")}
   end
 
-  defp stream_audio(pid, audio) do
-    audio
-    |> Stream.each(fn chunk ->
-      send(pid, {:command, AudioMessage.new(chunk)})
-    end)
-    |> Stream.run()
-
-    send(
-      pid,
-      {:command, AudioMessage.end_of_stream()}
-    )
-
-    :ok
+  defp start_stream(pid) do
+    {:ok, send(pid, {:command, :stream_audio})}
   rescue
     _ -> {:error, FailedToSendMessage.exception(name: "AudioMessage")}
   end
@@ -191,10 +189,25 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
 
   @doc false
   def handle_info(
-        {:internal, :update_connection_context},
+        {:command, :update_connection_context},
         %ConnectionState{} = state
       ),
       do: handle_info({:command, state.context}, state)
+
+  @doc false
+  def handle_info(
+        {:command, :stream_audio},
+        %ConnectionState{} = state
+      ) do
+    case read_audio_chunk(state) do
+      {%{size: 0} = chunk, new_state} ->
+        handle_info({:command, chunk}, new_state)
+
+      {chunk, new_state} ->
+        Process.send_after(self(), {:command, :stream_audio}, 10)
+        handle_info({:command, chunk}, new_state)
+    end
+  end
 
   @doc false
   def handle_info({:command, message}, state) do
@@ -254,8 +267,10 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
 
     # {:close, 1000, "Normal closure",
     #  %ConnectionState{state | state: :disconnected, waiting_for_response: []}}
+
     handle_info({:command, state.context}, %ConnectionState{
-      connection_id: Guid.create_no_dash_guid()
+      state
+      | connection_id: Guid.create_no_dash_guid()
     })
   end
 
@@ -265,14 +280,31 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   defp handle_path("speech.startDetected", _message, state),
     do: {:ok, %ConnectionState{state | current_stage: :speech_start_detected}}
 
-  defp handle_path("turn.start", _message, state),
-    do: {:ok, %ConnectionState{state | current_stage: :turn_start}}
+  defp handle_path("turn.start", _message, state) do
+    Process.send_after(self(), {:command, :stream_audio}, 100)
+    {:ok, %ConnectionState{state | current_stage: :turn_start}}
+  end
 
   defp handle_path("speech.hypothesis", _message, state),
     do: {:ok, %ConnectionState{state | current_stage: :speech_hypothesis}}
 
-  defp handle_path("speech.endDetected", _message, state),
-    do: {:ok, %ConnectionState{state | current_stage: :speech_end_detected}}
+  defp handle_path("speech.endDetected", message, state) do
+    case Json.from_json(message.payload, EndDetected) do
+      {:ok, payload} ->
+        audio_stream = %ReplayableAudioStream{state.audio_stream | buffer_offset: payload.offset}
+
+        {:ok,
+         %ConnectionState{state | audio_stream: audio_stream, current_stage: :speech_end_detected}}
+
+      {:error, err} ->
+        {:ok,
+         %ConnectionState{
+           state
+           | response: {:error, err},
+             current_stage: :speech_end_detected
+         }}
+    end
+  end
 
   defp handle_path("speech.phrase", message, state) do
     case Json.from_json(message.payload, SpeechPhrase) do
@@ -306,6 +338,16 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   defp handle_path(_unknown, _message, state),
     do: {:ok, state}
 
+  defp read_audio_chunk(%ConnectionState{audio_stream: audio_stream} = state) do
+    case ReplayableAudioStream.read(audio_stream) do
+      {:ok, {chunk, audio_stream}} when chunk != :eof ->
+        {AudioMessage.new(chunk), %ConnectionState{state | audio_stream: audio_stream}}
+
+      {:ok, {:eof, audio_stream}} ->
+        {AudioMessage.end_of_stream(), %ConnectionState{state | audio_stream: audio_stream}}
+    end
+  end
+
   defp path_value(headers),
     do:
       Enum.find_value(headers, nil, fn [header, value] ->
@@ -320,10 +362,10 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     ]
 
   @doc false
-  def child_spec({socket_opts, context_opts}) do
+  def child_spec({socket_opts, context_opts, stream}) do
     %{
       id: socket_opts[:connection_id],
-      start: {__MODULE__, :open_connection, [socket_opts, context_opts]}
+      start: {__MODULE__, :open_connection, [socket_opts, context_opts, stream]}
     }
   end
 end

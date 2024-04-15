@@ -379,7 +379,9 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
     end
 
     test "should parse longform content correctly", %{longform_file_path: file_path} do
-      Recognizer.recognize_once(:file, file_path,
+      file_stream = File.stream!(file_path, [], 32_768)
+
+      Recognizer.recognize_once(file_stream,
         speech_context_opts: [
           phrase_detection: [
             speech_segmentation_silence_ms: 1000
