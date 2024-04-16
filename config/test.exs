@@ -5,4 +5,6 @@ config :ex_azure_speech,
   language: "nl-NL",
   auth_key: System.get_env("AZURE_SPEECH_KEY")
 
-# config :tesla, adapter: Tesla.Mock
+config :logger, level: :emergency
+
+config :tesla, adapter: Tesla.Mock

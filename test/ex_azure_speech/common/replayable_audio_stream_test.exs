@@ -86,7 +86,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     test "should be able to replay starting from an earlier offset" do
       {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
-      assert {:ok, {chunk, state}} =
+      assert {:ok, {_chunk, state}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
                  stream: [binary],
                  buffer: <<>>,
@@ -107,7 +107,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     test "should last_read_offset be the end-of-file, should return a eof" do
       {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
-      assert {:ok, {chunk, state}} =
+      assert {:ok, {_chunk, state}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
                  stream: [binary],
                  buffer: <<>>,

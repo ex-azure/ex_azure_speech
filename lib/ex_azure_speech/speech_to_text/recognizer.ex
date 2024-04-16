@@ -29,22 +29,11 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
 
   defmacrop with_connection(socket_opts, context_opts, stream, do: block) do
     quote do
-      {:ok, pid} =
-        DynamicSupervisor.start_child(
-          {:via, PartitionSupervisor, {__MODULE__, self()}},
-          {Websocket, {unquote(socket_opts), unquote(context_opts), unquote(stream)}}
-        )
+      {:ok, pid} = open_session(unquote(socket_opts), unquote(context_opts), unquote(stream))
 
       var!(pid) = pid
 
-      res = unquote(block)
-
-      DynamicSupervisor.terminate_child(
-        {:via, PartitionSupervisor, {__MODULE__, self()}},
-        pid
-      )
-
-      res
+      unquote(block)
     end
   end
 
@@ -52,7 +41,7 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   Synchronously recognizes speech from the given audio input. This function accepts either a file path or a stream as input.
   """
   @spec recognize_once(Enumerable.t(), Recognizer.opts()) ::
-          {:ok, SpeechPhrase.t()} | {:error, any}
+          {:ok, list(SpeechPhrase.t())} | {:error, any}
   def recognize_once(stream, opts \\ []) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
     speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
@@ -60,12 +49,31 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     with {:ok, socket_opts} <- SocketConfig.new(socket_opts),
          {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
       with_connection(socket_opts, speech_context_opts, stream) do
-        Websocket.process_and_wait(pid)
+        Task.async(fn ->
+          Websocket.process_to_stream(pid, &close_session/1)
+          |> case do
+            {:ok, phrases} -> {:ok, phrases |> Enum.to_list()}
+            {:error, reason} -> {:error, reason}
+          end
+        end)
+        |> Task.await(15_000)
       end
     end
   end
 
-  # TODO: Implement continuous recognition
+  @spec recognize_continous(Enumerable.t(), Recognizer.opts()) ::
+          {:ok, Enumerable.t()} | {:error, any}
+  def recognize_continous(stream, opts \\ []) do
+    socket_opts = Keyword.get(opts, :socket_opts, [])
+    speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
+
+    with {:ok, socket_opts} <- SocketConfig.new(socket_opts),
+         {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
+      with_connection(socket_opts, speech_context_opts, stream) do
+        Websocket.process_to_stream(pid, &close_session/1)
+      end
+    end
+  end
 
   def child_spec(opts) do
     %{
@@ -74,6 +82,20 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
       type: :supervisor
     }
   end
+
+  defp open_session(socket_opts, context_opts, stream),
+    do:
+      DynamicSupervisor.start_child(
+        {:via, PartitionSupervisor, {__MODULE__, self()}},
+        {Websocket, {socket_opts, context_opts, stream}}
+      )
+
+  defp close_session(pid),
+    do:
+      DynamicSupervisor.terminate_child(
+        {:via, PartitionSupervisor, {__MODULE__, self()}},
+        pid
+      )
 
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(_opts) do

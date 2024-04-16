@@ -13,14 +13,12 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStream do
   """
   @moduledoc section: :common
 
-  defstruct [
-    :stream,
-    :buffer,
-    :buffer_offset,
-    :last_read_offset,
-    :bytes_per_second,
-    :chunk_size
-  ]
+  defstruct stream: [],
+            buffer: <<>>,
+            buffer_offset: 0,
+            last_read_offset: 0,
+            bytes_per_second: 0,
+            chunk_size: 32_768
 
   alias __MODULE__
 
@@ -110,6 +108,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStream do
     %ReplayableAudioStream{
       state
       | buffer_offset: 0,
+        last_read_offset: state.last_read_offset - byte_offset,
         buffer: new_buffer
     }
   end
