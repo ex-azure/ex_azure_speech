@@ -9,6 +9,9 @@ defmodule ExAzureSpeech.Common.Guid do
   """
   @type t() :: String.t()
 
+  @doc """
+  Create a new GUID.
+  """
   @spec create_no_dash_guid() :: t()
   def create_no_dash_guid(),
     do:

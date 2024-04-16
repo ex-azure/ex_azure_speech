@@ -52,6 +52,7 @@ defmodule ExAzureSpeech.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:deep_merge, "~> 1.0"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:doctor, "~> 0.21", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.14", only: :test},
       {:ex_check, "~> 0.14", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},

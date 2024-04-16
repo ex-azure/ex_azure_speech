@@ -20,6 +20,9 @@ defmodule ExAzureSpeech.SpeechToText.Messages.SpeechContextMessage do
 
   @type t() :: %SpeechContextMessage{payload: map()}
 
+  @doc """
+  Create a new SpeechContextMessage with the given configuration options.  
+  """
   @spec new(SpeechContextConfig.t()) :: SpeechContextMessage.t()
   def new(opts),
     do:
