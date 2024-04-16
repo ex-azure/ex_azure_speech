@@ -1,7 +1,7 @@
 defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
   use ExUnit.Case, async: true
 
-  alias ExAzureSpeech.Common.ConnectionState
+  alias ExAzureSpeech.Common.{ConnectionState, ReplayableAudioStream}
   alias ExAzureSpeech.SpeechToText.Websocket
 
   alias ExAzureSpeech.Support.Fixtures.SpeechToText.WebsocketResponses
@@ -30,7 +30,7 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
     end
 
     test "should handle a speech.phrase message" do
-      assert {:ok, %ConnectionState{current_stage: :speech_phrase, response: response}} =
+      assert {:ok, %ConnectionState{current_stage: :speech_phrase, responses: [response]}} =
                Websocket.handle_in(
                  {:text, WebsocketResponses.speech_phrase()},
                  %ConnectionState{}
@@ -52,7 +52,7 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
     end
 
     test "should handle a invalid speech.phrase message" do
-      assert {:ok, %ConnectionState{current_stage: :speech_phrase, response: response}} =
+      assert {:ok, %ConnectionState{current_stage: :speech_phrase, responses: [response]}} =
                Websocket.handle_in(
                  {:text, WebsocketResponses.invalid_speech_phrase()},
                  %ConnectionState{}
@@ -63,10 +63,14 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
     end
 
     test "should handle a speech.endDetected message" do
-      assert {:ok, %ConnectionState{current_stage: :speech_end_detected}} =
+      assert {:ok,
+              %ConnectionState{
+                current_stage: :speech_end_detected,
+                audio_stream: _
+              }} =
                Websocket.handle_in(
                  {:text, WebsocketResponses.speech_end_detected()},
-                 %ConnectionState{}
+                 %ConnectionState{audio_stream: %ReplayableAudioStream{}}
                )
     end
 
@@ -91,8 +95,7 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
               %ExAzureSpeech.Common.ConnectionState{
                 connection_id: nil,
                 state: :disconnected,
-                response: nil,
-                waiting_for_response: [],
+                responses: [],
                 command_queue: {[], []},
                 current_stage: nil,
                 telemetry: []
@@ -113,8 +116,7 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
               %ExAzureSpeech.Common.ConnectionState{
                 connection_id: nil,
                 state: :disconnected,
-                response: nil,
-                waiting_for_response: [],
+                responses: [],
                 command_queue: {[], []},
                 current_stage: nil,
                 telemetry: []
@@ -122,33 +124,6 @@ defmodule ExAzureSpeech.SpeechToText.WebsocketTest do
                Websocket.handle_info({:internal, :event_loop}, %ConnectionState{
                  command_queue: queue_with_command
                })
-    end
-
-    test "if we have waiting processes, they should be notified" do
-      queue_with_command = :queue.new()
-      queue_with_command = :queue.in({:internal, :notify_end}, queue_with_command)
-
-      assert {
-               :close,
-               1000,
-               "Normal closure",
-               %ExAzureSpeech.Common.ConnectionState{
-                 connection_id: nil,
-                 state: :disconnected,
-                 response: _,
-                 waiting_for_response: _,
-                 command_queue: {[], []},
-                 current_stage: nil,
-                 telemetry: []
-               }
-             } =
-               Websocket.handle_info({:internal, :event_loop}, %ConnectionState{
-                 command_queue: queue_with_command,
-                 response: {:recognition, %{"RecognitionStatus" => "Success"}},
-                 waiting_for_response: [self()]
-               })
-
-      assert_receive {:recognition, %{"RecognitionStatus" => "Success"}}
     end
   end
 end
