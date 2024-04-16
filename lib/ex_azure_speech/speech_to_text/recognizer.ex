@@ -38,9 +38,9 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   end
 
   @doc """
-  Synchronously recognizes speech from the given audio input. This function accepts either a file path or a stream as input.
+  Synchronously recognizes speech from the given audio input.
   """
-  @spec recognize_once(Enumerable.t(), Recognizer.opts()) ::
+  @spec recognize_once(audio_stream :: Enumerable.t(), recognition_options :: Recognizer.opts()) ::
           {:ok, list(SpeechPhrase.t())} | {:error, any}
   def recognize_once(stream, opts \\ []) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
@@ -61,7 +61,13 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     end
   end
 
-  @spec recognize_continous(Enumerable.t(), Recognizer.opts()) ::
+  @doc """
+  Recognizes speech from the given audio input continuously. It imediately returns a stream that can be lazily consumed.
+  """
+  @spec recognize_continous(
+          audio_stream :: Enumerable.t(),
+          recognition_options :: Recognizer.opts()
+        ) ::
           {:ok, Enumerable.t()} | {:error, any}
   def recognize_continous(stream, opts \\ []) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
