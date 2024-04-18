@@ -32,7 +32,13 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
            start_child: fn _, _ -> {:ok, self()} end,
            terminate_child: fn _, _ -> :ok end
          ]},
-        {Websocket, [], [process_to_stream: fn _ -> :timer.sleep(10) end]}
+        {Websocket, [],
+         [
+           process_to_stream: fn _ ->
+             :timer.sleep(1000)
+             {:ok, %{}}
+           end
+         ]}
       ]) do
         assert {:error, %ExAzureSpeech.Common.Errors.Timeout{}} =
                  Recognizer.recognize_once(<<0, 1>>, timeout: 1)
