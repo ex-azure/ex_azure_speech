@@ -38,9 +38,10 @@ Supervisor.start_link(children, strategy: :one_for_one)
 
 #### Example
 ```elixir
-Recognizer.recognize_once(:file, "priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
+File.stream!("test.wav") |> Recognizer.recognize_once()
+
 {:ok,
-  %ExAzureSpeech.SpeechToText.Responses.SpeechPhrase{
+  [%ExAzureSpeech.SpeechToText.Responses.SpeechPhrase{
     channel: 0,
     display_text: "My voice is my passport verify me.",
     duration: 27600000,
@@ -50,8 +51,12 @@ Recognizer.recognize_once(:file, "priv/samples/myVoiceIsMyPassportVerifyMe01.wav
     primary_language: nil,
     recognition_status: "Success",
     speaker_id: nil
-  }}
+  }]}
 ```
+
+## Readiness
+
+This library is still in continuous development, so contracts and APIs may change considerably. Please, use it at your own risk.
 
 ## Roadmap
 
@@ -59,6 +64,4 @@ Recognizer.recognize_once(:file, "priv/samples/myVoiceIsMyPassportVerifyMe01.wav
 - Translation
 - Speech Intent
 - Avatars
-
-
 

@@ -7,6 +7,10 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   The communication with the Speech-to-Text API is done through a WebSocket connection. For safety and isolation purposes,
   each recognition request is handled by a separate WebSocket connection. This is achieved by spawning a new WebSocket process thats supervised by a DynamicSupervisor,
   which will guarantee that the WebSocket connection is properly terminated after the recognition process is done.
+
+  ## Supported Formats
+
+  Right now the recognition service supports only RIFF WAV (WAVE) audio format. The audio must be mono, with a sample rate of 16 kHz and 16-bit PCM encoding.
   """
   @moduledoc section: :speech_to_text
   alias __MODULE__

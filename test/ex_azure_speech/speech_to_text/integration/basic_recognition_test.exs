@@ -51,7 +51,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
       file_path: file_path,
       expected_text: expected_text
     } do
-      {:ok, opts} = SpeechContextConfig.default(expected_text)
+      {:ok, opts} = SpeechContextConfig.new(speech_assessment: [reference_text: expected_text])
       file_stream = File.stream!(file_path, [], 32_768)
 
       assert {:ok,

@@ -38,10 +38,11 @@ defmodule ExAzureSpeech.SpeechToText.SpeechContextConfig do
               keys: [
                 reference_text: [
                   type: :string,
-                  required: true,
+                  required: false,
+                  default: "",
                   doc: """
                   The reference text to be used to evaluate the user's speech.  
-                  This is only used if the prosoy accessment is enabled.
+                  This is optional for unscripted assessment.
                   """
                 ],
                 grading_system: [
@@ -56,15 +57,15 @@ defmodule ExAzureSpeech.SpeechToText.SpeechContextConfig do
                   """
                 ],
                 granularity: [
-                  type: {:in, [:phoneme, :sentence, :word]},
+                  type: {:in, [:phoneme, :word, :fulltext]},
                   default: :phoneme,
                   doc: """
                   The granularity to be used to evaluate the user's speech.  
 
                   Supported granularities:  
                   - :phoneme - The user's speech will be evaluated at the phoneme level.  
-                  - :sentence - The user's speech will be evaluated at the sentence level.  
                   - :word - The user's speech will be evaluated at the word level.  
+                  - :fulltext - The user's speech will be evaluated at the full text level.  
                   """
                 ],
                 dimension: [
@@ -121,12 +122,4 @@ defmodule ExAzureSpeech.SpeechToText.SpeechContextConfig do
   """
   @spec new(Keyword.t()) :: {:ok, t()} | {:error, NimbleOptions.ValidationError.t()}
   def new(opts), do: NimbleOptions.validate(opts, @schema)
-
-  def default(reference_text),
-    do:
-      new(
-        speech_assessment: [
-          reference_text: reference_text
-        ]
-      )
 end

@@ -23,7 +23,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   alias ExAzureSpeech.Common.Guid
   alias ExAzureSpeech.Auth.Client, as: AuthClient
   alias ExAzureSpeech.Common.{ConnectionState, HeaderNames, SocketMessage}
-  alias ExAzureSpeech.Common.Errors.{InvalidMessage, InvalidResponse, Timeout}
+  alias ExAzureSpeech.Common.Errors.{InvalidMessage, InvalidResponse}
   alias ExAzureSpeech.Common.Messages.{AudioMessage, SpeechConfigMessage}
   alias ExAzureSpeech.Common.ReplayableAudioStream
   alias ExAzureSpeech.SpeechToText.{SocketConfig, SpeechContextConfig}
@@ -48,7 +48,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   speech_start_detected: The server accepted the speech configs and contexts and will start a recognition turn.  
   turn_start: The server started a recognition turn and is waiting for audio input.  
   speech_hypothesis: The server is processing the audio input and has a hypothesis already processed  
-  speech_end_detected: The server detected the end of the speech input and will return the final results.  
+  speech_end_detected: The server detected the end of the speech input and will return the results.  
   speech_phrase: The server has a recognition result.  
   turn_end: The server ended the recognition turn and the connection is ready for a new recognition turn or to being closed.  
   """
@@ -100,8 +100,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
              | FailedToSendMessage.t()
              | InvalidMessage.t()
              | InvalidResponse.t()
-             | SpeechRecognitionFailed.t()
-             | Timeout.t()}
+             | SpeechRecognitionFailed.t()}
   def process_to_stream(pid, deferred_session_close) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
@@ -142,7 +141,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   defp start_stream(pid) do
     {:ok, send(pid, {:command, :stream_audio})}
   rescue
-    _ -> {:error, FailedToSendMessage.exception(name: "AudioMessage")}
+    _ -> {:error, FailedToSendMessage.exception(name: "StartAudioStream")}
   end
 
   defp stream_responses(pid, deferred_function_close) do
