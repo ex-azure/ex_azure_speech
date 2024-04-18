@@ -22,13 +22,15 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   }
 
   alias ExAzureSpeech.SpeechToText.Responses.SpeechPhrase
+  alias ExAzureSpeech.Common.Errors
 
   @typedoc """
   See the `SocketConfig.t()` and `SpeechContextConfig.t()` module for more information on the available options.
   """
   @type opts() :: [
           socket_opts: SocketConfig.t() | nil,
-          speech_context_opts: SpeechContextConfig.t() | nil
+          speech_context_opts: SpeechContextConfig.t() | nil,
+          timeout: integer() | nil
         ]
 
   defmacrop with_connection(socket_opts, context_opts, stream, do: block) do
@@ -45,22 +47,36 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   Synchronously recognizes speech from the given audio input.
   """
   @spec recognize_once(audio_stream :: Enumerable.t(), recognition_options :: Recognizer.opts()) ::
-          {:ok, list(SpeechPhrase.t())} | {:error, any}
+          {:ok, list(SpeechPhrase.t())}
+          | {:error,
+             Errors.Internal.t()
+             | Errors.InvalidResponse.t()
+             | Errors.Forbidden.t()
+             | NimbleOptions.ValidationError.t()
+             | Errors.Timeout.t()}
   def recognize_once(stream, opts \\ []) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
     speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
+    timeout = Keyword.get(opts, :timeout, 15_000)
 
     with {:ok, socket_opts} <- SocketConfig.new(socket_opts),
          {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
       with_connection(socket_opts, speech_context_opts, stream) do
-        Task.async(fn ->
-          Websocket.process_to_stream(pid, &close_session/1)
-          |> case do
-            {:ok, phrases} -> {:ok, phrases |> Enum.to_list()}
-            {:error, reason} -> {:error, reason}
-          end
-        end)
-        |> Task.await(15_000)
+        try do
+          Task.async(fn ->
+            Websocket.process_to_stream(pid)
+            |> case do
+              {:ok, phrases} -> {:ok, phrases |> Enum.to_list()}
+              {:error, reason} -> {:error, reason}
+            end
+          end)
+          |> Task.await(timeout)
+        catch
+          :exit, _ ->
+            {:error, Errors.Timeout.exception(operation: :recognize_once, timeout: timeout)}
+        after
+          close_session(pid)
+        end
       end
     end
   end
@@ -72,7 +88,12 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
           audio_stream :: Enumerable.t(),
           recognition_options :: Recognizer.opts()
         ) ::
-          {:ok, Enumerable.t()} | {:error, any}
+          {:ok, Enumerable.t()}
+          | {:error,
+             Errors.Internal.t()
+             | Errors.InvalidResponse.t()
+             | Errors.Forbidden.t()
+             | NimbleOptions.ValidationError.t()}
   def recognize_continous(stream, opts \\ []) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
     speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
@@ -80,7 +101,11 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     with {:ok, socket_opts} <- SocketConfig.new(socket_opts),
          {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
       with_connection(socket_opts, speech_context_opts, stream) do
-        Websocket.process_to_stream(pid, &close_session/1)
+        try do
+          Websocket.process_to_stream(pid)
+        after
+          close_session(pid)
+        end
       end
     end
   end

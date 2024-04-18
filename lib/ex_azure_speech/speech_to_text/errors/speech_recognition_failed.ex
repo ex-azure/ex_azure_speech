@@ -7,6 +7,7 @@ defmodule ExAzureSpeech.SpeechToText.Errors.SpeechRecognitionFailed do
 
   @type t() :: Splode.Error.t()
 
+  @doc false
   def message(%{reason: reason}) do
     "Failed to recognize speech: #{reason}"
   end

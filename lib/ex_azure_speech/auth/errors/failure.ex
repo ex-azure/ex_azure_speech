@@ -3,7 +3,7 @@ defmodule ExAzureSpeech.Auth.Errors.Failure do
   Represents an unexpected authentication error.
   """
   @moduledoc section: :auth
-  use Splode.Error, fields: [:cause], class: :invalid
+  use Splode.Error, fields: [:cause], class: :invalid_response
 
   @type t() :: Splode.Error.t()
 

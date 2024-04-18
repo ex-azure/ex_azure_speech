@@ -3,7 +3,7 @@ defmodule ExAzureSpeech.Auth.Errors.Unauthorized do
   Return when the informed API Key is not authorized to access the Azure Cognitive Services API.
   """
   @moduledoc section: :auth
-  use Splode.Error, class: :not_authorized
+  use Splode.Error, class: :forbidden
 
   @type t() :: Splode.Error.t()
 

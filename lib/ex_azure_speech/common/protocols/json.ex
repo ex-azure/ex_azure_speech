@@ -19,7 +19,7 @@ defimpl ExAzureSpeech.Common.Protocols.Json, for: BitString do
   def from_json(json, struct) do
     case Jason.decode(json, keys: &to_snake_atom/1) do
       {:ok, response} -> {:ok, struct(struct, response)}
-      {:error, _} -> {:error, InvalidResponse.exception(response: json, cause: :invalid_json)}
+      {:error, _} -> {:error, InvalidResponse.exception()}
     end
   end
 

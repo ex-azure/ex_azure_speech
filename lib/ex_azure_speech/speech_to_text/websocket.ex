@@ -20,19 +20,19 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   require WaitForIt
   require Logger
 
-  alias ExAzureSpeech.Common.Guid
   alias ExAzureSpeech.Auth.Client, as: AuthClient
-  alias ExAzureSpeech.Common.{ConnectionState, HeaderNames, SocketMessage}
-  alias ExAzureSpeech.Common.Errors.{InvalidMessage, InvalidResponse}
+  alias ExAzureSpeech.Auth.Errors, as: AuthError
+
+  alias ExAzureSpeech.Common.{ConnectionState, Guid, HeaderNames, SocketMessage}
+
+  alias ExAzureSpeech.Common.Errors.{
+    FailedToDispatchCommand,
+    WebsocketConnectionFailed
+  }
+
   alias ExAzureSpeech.Common.Messages.{AudioMessage, SpeechConfigMessage}
   alias ExAzureSpeech.Common.ReplayableAudioStream
   alias ExAzureSpeech.SpeechToText.{SocketConfig, SpeechContextConfig}
-
-  alias ExAzureSpeech.SpeechToText.Errors.{
-    FailedToSendMessage,
-    SpeechRecognitionFailed,
-    WebsocketConnectionNeverStarted
-  }
 
   alias ExAzureSpeech.SpeechToText.Messages.SpeechContextMessage
   alias ExAzureSpeech.SpeechToText.Responses.{EndDetected, SpeechPhrase}
@@ -64,7 +64,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
   Opens a WebSocket connection with the Azure Cognitive Services Speech-to-Text service.
   """
   @spec open_connection(SocketConfig.t(), SpeechContextConfig.t(), Enumerable.t()) ::
-          {:ok, pid()} | {:error, any()}
+          {:ok, pid()} | {:error, AuthError.Unauthorized.t() | AuthError.Failure.t()}
   def open_connection(opts, context_config, stream) do
     with connection_id <- opts[:connection_id],
          context <- SpeechContextMessage.new(context_config),
@@ -93,24 +93,17 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     end
   end
 
-  @spec process_to_stream(websocket_pid :: pid, socket_close_function :: any()) ::
+  @spec process_to_stream(websocket_pid :: pid) ::
           {:ok, Enumerable.t()}
           | {:error,
-             WebsocketConnectionNeverStarted.t()
-             | FailedToSendMessage.t()
-             | InvalidMessage.t()
-             | InvalidResponse.t()
-             | SpeechRecognitionFailed.t()}
-  def process_to_stream(pid, deferred_session_close) do
+             WebsocketConnectionFailed.t()
+             | FailedToDispatchCommand.t()}
+  def process_to_stream(pid) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
          {:ok, _} <- update_connection_context(pid),
          {:ok, _} <- start_stream(pid) do
-      {:ok, stream_responses(pid, deferred_session_close)}
-    else
-      {:error, _} = error ->
-        deferred_session_close.(pid)
-        error
+      {:ok, stream_responses(pid)}
     end
   end
 
@@ -122,29 +115,34 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
       timeout: 5_000 do
       :ready -> :ok
     else
-      _ -> {:error, WebsocketConnectionNeverStarted.exception()}
+      _ -> {:error, WebsocketConnectionFailed.exception()}
     end
   end
 
   defp send_config_message(pid) do
     {:ok, send(pid, {:command, SpeechConfigMessage.new()})}
   rescue
-    _ -> {:error, FailedToSendMessage.exception(%{name: "SpeechConfigMessage"})}
+    _ ->
+      {:error,
+       FailedToDispatchCommand.exception(command: SpeechConfigMessage, websocket_pid: pid)}
   end
 
   defp update_connection_context(pid) do
     {:ok, send(pid, {:command, :update_connection_context})}
   rescue
-    _ -> {:error, FailedToSendMessage.exception(name: "UpdateConnectionContext")}
+    _ ->
+      {:error,
+       FailedToDispatchCommand.exception(command: :update_connection_context, websocket_pid: pid)}
   end
 
   defp start_stream(pid) do
     {:ok, send(pid, {:command, :stream_audio})}
   rescue
-    _ -> {:error, FailedToSendMessage.exception(name: "StartAudioStream")}
+    _ ->
+      {:error, FailedToDispatchCommand.exception(command: :start_stream, websocket_pid: pid)}
   end
 
-  defp stream_responses(pid, deferred_function_close) do
+  defp stream_responses(pid) do
     Stream.resource(
       fn ->
         []
@@ -159,7 +157,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
           {:error, _reason} -> {[], []}
         end
       end,
-      fn _ -> deferred_function_close.(pid) end
+      fn _ -> :ok end
     )
   end
 
