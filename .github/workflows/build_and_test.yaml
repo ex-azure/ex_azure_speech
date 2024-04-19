@@ -33,22 +33,22 @@ jobs:
         path: |
           deps
           _build
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
-
-    - name: PLT Cache
-      uses: actions/cache@v4
-      id: plt-cache
-      with:
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-          path: |
-            ./_plts/core
+        key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
 
     - name: Fetch and Compile Dependencies
       if: steps.mix-deps.outputs.cache-hit != 'true'
       run: |
         mix deps.get
         mix deps.compile
+
+    - name: PLT Cache
+      uses: actions/cache@v4
+      id: plt-cache
+      with:
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles('**/mix.lock') }}
+          path: |
+            _plts/core
 
     - name: Create PLTs
       if: steps.plt-cache.outputs.cache-hit != 'true'
