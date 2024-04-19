@@ -8,7 +8,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
 
   describe "read/1" do
     test "should be able to read from the buffer starting from an offset" do
-      {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
+      {:ok, binary} = File.read("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
       assert {:ok, {chunk, %{buffer_offset: buffer_offset}}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
@@ -30,7 +30,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     end
 
     test "should stream from a file to the buffer, returning the chunk" do
-      stream = File.stream!("priv/samples/myVoiceIsMyPassportVerifyMe01.wav", [], 1024)
+      stream = File.stream!("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav", [], 1024)
 
       assert {:ok,
               {chunk,
@@ -54,7 +54,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     end
 
     test "should be able to read chunk-by-chunk" do
-      stream = File.stream!("priv/samples/myVoiceIsMyPassportVerifyMe01.wav", [], 1024)
+      stream = File.stream!("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav", [], 1024)
 
       assert {:ok, {_chunk, state}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
@@ -84,7 +84,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     end
 
     test "should be able to replay starting from an earlier offset" do
-      {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
+      {:ok, binary} = File.read("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
       assert {:ok, {_chunk, state}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
@@ -105,7 +105,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
     end
 
     test "should last_read_offset be the end-of-file, should return a eof" do
-      {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
+      {:ok, binary} = File.read("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
       assert {:ok, {_chunk, state}} =
                ReplayableAudioStream.read(%ReplayableAudioStream{
@@ -123,7 +123,7 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStreamTest do
 
   describe "shrink/1" do
     test "Should be able to shrink the buffer, discarding everything before the current offset" do
-      {:ok, binary} = File.read("priv/samples/myVoiceIsMyPassportVerifyMe01.wav")
+      {:ok, binary} = File.read("test/support/samples/myVoiceIsMyPassportVerifyMe01.wav")
 
       assert {:ok,
               %{buffer_offset: 0, buffer: buffer} =
