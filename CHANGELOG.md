@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/YgorCastor/ex_azure_speech/compare/v0.1.0...v0.1.1) (2024-04-25)
+
+
+### Bug Fixes
+
+* **continuous_speech:** Delegates the connection shutdown to the websocket ([b3f9a9d](https://github.com/YgorCastor/ex_azure_speech/commit/b3f9a9d6b1f2554cb8a3f7cab54aaf97d75c671d))
+* **pronunciation_assessment:** Added FullText pronunciation granularity ([d3e6713](https://github.com/YgorCastor/ex_azure_speech/commit/d3e67134165eba654255a063ecd083e6f2a8226b))
+
 ## 0.1.0 (2024-04-19)
 
 
