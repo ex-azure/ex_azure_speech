@@ -7,7 +7,7 @@ defmodule ExAzureSpeech.SpeechToText.Granularity do
   @typedoc """
   phoneme: The granularity that returns the phoneme-level recognition results.
   word: The granularity that returns the word-level recognition results.
-  sentence: The granularity that returns the sentence-level recognition results.
+  fulltext: The granularity that returns the fulltext-level recognition results.
   """
   @type t() :: :phoneme | :word | :sentence
 
@@ -16,10 +16,10 @@ defmodule ExAzureSpeech.SpeechToText.Granularity do
   @doc false
   def word(), do: :word
   @doc false
-  def sentence(), do: :sentence
+  def fulltext(), do: :fulltext
 
   @doc false
   def to_string(:phoneme), do: "Phoneme"
   def to_string(:word), do: "Word"
-  def to_string(:sentence), do: "Sentence"
+  def to_string(:fulltext), do: "FullText"
 end
