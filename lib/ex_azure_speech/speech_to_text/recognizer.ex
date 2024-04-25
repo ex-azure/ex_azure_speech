@@ -64,7 +64,7 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
       with_connection(socket_opts, speech_context_opts, stream) do
         try do
           Task.async(fn ->
-            Websocket.process_to_stream(pid)
+            Websocket.process_to_stream(pid, fn _ -> :ok end)
             |> case do
               {:ok, phrases} -> {:ok, phrases |> Enum.to_list()}
               {:error, reason} -> {:error, reason}
@@ -102,9 +102,11 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
          {:ok, speech_context_opts} <- SpeechContextConfig.new(speech_context_opts) do
       with_connection(socket_opts, speech_context_opts, stream) do
         try do
-          Websocket.process_to_stream(pid)
-        after
-          close_session(pid)
+          Websocket.process_to_stream(pid, &close_session/1)
+        rescue
+          err ->
+            close_session(pid)
+            {:error, Errors.Internal.exception(err)}
         end
       end
     end

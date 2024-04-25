@@ -93,17 +93,17 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
     end
   end
 
-  @spec process_to_stream(websocket_pid :: pid) ::
+  @spec process_to_stream(websocket_pid :: pid, close_connection_callback :: function()) ::
           {:ok, Enumerable.t()}
           | {:error,
              WebsocketConnectionFailed.t()
              | FailedToDispatchCommand.t()}
-  def process_to_stream(pid) do
+  def process_to_stream(pid, close_connection_callback) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
          {:ok, _} <- update_connection_context(pid),
          {:ok, _} <- start_stream(pid) do
-      {:ok, stream_responses(pid)}
+      {:ok, stream_responses(pid, close_connection_callback)}
     end
   end
 
@@ -142,7 +142,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
       {:error, FailedToDispatchCommand.exception(command: :start_stream, websocket_pid: pid)}
   end
 
-  defp stream_responses(pid) do
+  defp stream_responses(pid, close_connection_callback) do
     Stream.resource(
       fn ->
         []
@@ -157,7 +157,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
           {:error, _reason} -> {[], []}
         end
       end,
-      fn _ -> :ok end
+      fn _ -> close_connection_callback.(pid) end
     )
   end
 
