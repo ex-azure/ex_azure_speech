@@ -47,7 +47,7 @@ defmodule ExAzureSpeech.Common.SocketMessage do
   end
 
   @doc """
-  Deserializes a text message into a SocketMessage.
+  Deserializes messages into a SocketMessage.
   """
   @spec deserialize(:text, binary()) :: SocketMessage.t()
   def deserialize(:text, text) do
@@ -58,6 +58,21 @@ defmodule ExAzureSpeech.Common.SocketMessage do
       headers: Enum.map(headers, fn header -> String.split(header, ":", parts: 2) end),
       payload: payload,
       message_type: 0
+    }
+  end
+
+  @spec deserialize(:binary, binary()) :: SocketMessage.t()
+  def deserialize(:binary, binary) do
+    headers_length = binary |> binary_part(0, 2) |> :binary.decode_unsigned(:big)
+    headers = binary |> binary_part(2, headers_length)
+    payload = binary |> binary_part(2 + headers_length, byte_size(binary) - 2 - headers_length)
+
+    headers = String.split(headers, "\r\n")
+
+    %SocketMessage{
+      headers: Enum.map(headers, fn header -> String.split(header, ":", parts: 2) end),
+      payload: payload,
+      message_type: 1
     }
   end
 

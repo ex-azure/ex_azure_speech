@@ -14,6 +14,8 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
 
     Supervisor.start_link(children, strategy: :one_for_one)
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Httpc)
+
     %{
       file_path: "test/support/samples/myVoiceIsMyPassportVerifyMe01.wav",
       longform_file_path: "test/support/samples/large_article.wav",
