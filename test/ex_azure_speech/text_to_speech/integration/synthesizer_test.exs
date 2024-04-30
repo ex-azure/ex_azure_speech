@@ -93,4 +93,19 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
       assert_receive :session_end
     end
   end
+
+  test "should be able to deal with concurrent calls" do
+    ssml = SSML.sample()
+    ssml2 = SSML.sample("AAAAAA, wat gebeurt er, ik denk dat mijn stem verandert.")
+
+    {:ok, stream} = TextToSpeech.speak_ssml(ssml)
+    {:ok, stream2} = TextToSpeech.speak_ssml(ssml2)
+
+    task1 = Task.async(fn -> Enum.to_list(stream) end)
+    task2 = Task.async(fn -> Enum.to_list(stream2) end)
+    [result1, result2] = Task.await_many([task1, task2])
+
+    assert result1 |> Enum.count() == 81
+    assert result2 |> Enum.count() == 116
+  end
 end
