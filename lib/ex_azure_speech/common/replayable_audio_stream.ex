@@ -2,15 +2,6 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStream do
   @moduledoc """
   Implements a way to read audio-streams with the capability to rewing and restart from a specific offset point.
   """
-
-  @typedoc """
-  stream: Underlying stream of audio data.  
-  buffer: The binary buffer to hold streammed data.  
-  buffer_offset: The current offset in the buffer, each 1 increase in the offset represents 100ns of audio.  
-  last_read_offset: The last offset reead from the source stream.  
-  bytes_per_second: The number of bytes per second in the audio stream. Calculated as sample_rate * bits_per_sample * channels.  
-  chunk_size: The size in bytes of the chunk to read from the buffer.  
-  """
   @moduledoc section: :common
 
   defstruct stream: [],
@@ -22,6 +13,14 @@ defmodule ExAzureSpeech.Common.ReplayableAudioStream do
 
   alias __MODULE__
 
+  @typedoc """
+  stream: Underlying stream of audio data.  
+  buffer: The binary buffer to hold streammed data.  
+  buffer_offset: The current offset in the buffer, each 1 increase in the offset represents 100ns of audio.  
+  last_read_offset: The last offset reead from the source stream.  
+  bytes_per_second: The number of bytes per second in the audio stream. Calculated as sample_rate * bits_per_sample * channels.  
+  chunk_size: The size in bytes of the chunk to read from the buffer. Note that the chunk cannot be larger than 65535 bytes.  
+  """
   @type t() :: %ReplayableAudioStream{
           stream: Enumerable.t(),
           buffer: binary(),

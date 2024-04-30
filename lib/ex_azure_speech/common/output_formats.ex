@@ -3,8 +3,7 @@ defmodule ExAzureSpeech.Common.OutputFormats do
   Module for defining the supported output formats for the Azure Speech service.
   """
   @moduledoc section: :common
-
-  @formats [
+  use ExAzureSpeech.Common.KeyValue,
     audio_16khz_16bit_32kbps_mono_opus: "audio-16khz-16bit-32kbps-mono-opus",
     audio_24khz_16bit_24kbps_mono_opus: "audio-24khz-16bit-24kbps-mono-opus",
     audio_24khz_16bit_48kbps_mono_opus: "audio-24khz-16bit-48kbps-mono-opus",
@@ -42,22 +41,4 @@ defmodule ExAzureSpeech.Common.OutputFormats do
     webm_16khz_16bit_mono_opus: "webm-16khz-16bit-mono-opus",
     webm_24khz_16bit_mono_opus: "webm-24khz-16bit-mono-opus",
     webm_24khz_16bit_24kbps_mono_opus: "webm-24khz-16bit-24kbps-mono-opus"
-  ]
-
-  @typedoc """
-  Allowed audio output formats
-  """
-  @type t() :: unquote(@formats |> Keyword.keys() |> Enum.reduce(&{:|, [], [&1, &2]}))
-
-  defmacro formats() do
-    Enum.map(unquote(@formats), fn {_function_name, value} ->
-      value
-    end)
-  end
-
-  for {function_name, value} <- @formats do
-    @doc false
-    @spec unquote(function_name)() :: String.t()
-    def unquote(function_name)(), do: unquote(value)
-  end
 end

@@ -63,7 +63,7 @@ defmodule ExAzureSpeech.TextToSpeech.SpeechSynthesisConfig do
                   ]
                 ],
                 output_format: [
-                  type: {:in, ExAzureSpeech.Common.OutputFormats.formats()},
+                  type: {:in, ExAzureSpeech.Common.OutputFormats.values()},
                   type_doc: "`ExAzureSpeech.Common.OutputFormats.t()`",
                   required: false,
                   default: "riff-24khz-16bit-mono-pcm",
