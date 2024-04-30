@@ -4,6 +4,7 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
   @moduletag :integration
 
   alias ExAzureSpeech.Fixtures.TextToSpeech.SSML
+  alias ExAzureSpeech.TextToSpeech
   alias ExAzureSpeech.TextToSpeech.Synthesizer
 
   setup_all do
@@ -24,7 +25,7 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
       voice = "en-US-AriaNeural"
       language = "en-US"
 
-      {:ok, stream} = Synthesizer.speak_text(text, voice, language)
+      {:ok, stream} = TextToSpeech.speak_text(text, voice, language)
       # Returns 24 chunks of audio data
       assert 24 == Enum.to_list(stream) |> Enum.count()
     end
@@ -33,14 +34,14 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
   describe "speak_ssml/3" do
     test "should synthesize from a SSML" do
       ssml = SSML.sample()
-      {:ok, stream} = Synthesizer.speak_ssml(ssml)
+      {:ok, stream} = TextToSpeech.speak_ssml(ssml)
       # Returns 81 chunks of audio data
       assert 81 == Enum.to_list(stream) |> Enum.count()
     end
 
     test "should the ssml be invalid, an error should be in the stream" do
       ssml = SSML.invalid_sample()
-      {:ok, stream} = Synthesizer.speak_ssml(ssml)
+      {:ok, stream} = TextToSpeech.speak_ssml(ssml)
 
       assert [
                %ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError{
@@ -56,7 +57,7 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
       pid = self()
 
       {:ok, stream} =
-        Synthesizer.speak_ssml(
+        TextToSpeech.speak_ssml(
           ssml,
           [
             speech_synthesis_opts: [

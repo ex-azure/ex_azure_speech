@@ -7,13 +7,8 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
   The communication with the Speech-to-Text API is done through a WebSocket connection. For safety and isolation purposes,
   each recognition request is handled by a separate WebSocket connection. This is achieved by spawning a new WebSocket process thats supervised by a DynamicSupervisor,
   which will guarantee that the WebSocket connection is properly terminated after the recognition process is done.
-
-  ## Supported Formats
-
-  Right now the recognition service supports only RIFF WAV (WAVE) audio format. The audio must be mono, with a sample rate of 16 kHz and 16-bit PCM encoding.
   """
   @moduledoc section: :speech_to_text
-  alias __MODULE__
 
   alias ExAzureSpeech.SpeechToText.{
     SocketConfig,
@@ -21,17 +16,9 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     Websocket
   }
 
-  alias ExAzureSpeech.SpeechToText.Responses.SpeechPhrase
   alias ExAzureSpeech.Common.Errors
 
-  @typedoc """
-  See the `SocketConfig.t()` and `SpeechContextConfig.t()` module for more information on the available options.
-  """
-  @type opts() :: [
-          socket_opts: SocketConfig.t() | nil,
-          speech_context_opts: SpeechContextConfig.t() | nil,
-          timeout: integer() | nil
-        ]
+  @behaviour ExAzureSpeech.SpeechToText
 
   defmacrop with_connection(socket_opts, context_opts, stream, do: block) do
     quote do
@@ -43,18 +30,8 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     end
   end
 
-  @doc """
-  Synchronously recognizes speech from the given audio input.
-  """
-  @spec recognize_once(audio_stream :: Enumerable.t(), recognition_options :: Recognizer.opts()) ::
-          {:ok, list(SpeechPhrase.t())}
-          | {:error,
-             Errors.Internal.t()
-             | Errors.InvalidResponse.t()
-             | Errors.Forbidden.t()
-             | NimbleOptions.ValidationError.t()
-             | Errors.Timeout.t()}
-  def recognize_once(stream, opts \\ []) do
+  @impl true
+  def recognize_once(stream, opts) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
     speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
     timeout = Keyword.get(opts, :timeout, 15_000)
@@ -81,20 +58,8 @@ defmodule ExAzureSpeech.SpeechToText.Recognizer do
     end
   end
 
-  @doc """
-  Recognizes speech from the given audio input continuously. It imediately returns a stream that can be lazily consumed.
-  """
-  @spec recognize_continous(
-          audio_stream :: Enumerable.t(),
-          recognition_options :: Recognizer.opts()
-        ) ::
-          {:ok, Enumerable.t()}
-          | {:error,
-             Errors.Internal.t()
-             | Errors.InvalidResponse.t()
-             | Errors.Forbidden.t()
-             | NimbleOptions.ValidationError.t()}
-  def recognize_continous(stream, opts \\ []) do
+  @impl true
+  def recognize_continous(stream, opts) do
     socket_opts = Keyword.get(opts, :socket_opts, [])
     speech_context_opts = Keyword.get(opts, :speech_context_opts, [])
 

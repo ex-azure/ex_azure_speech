@@ -18,7 +18,7 @@ defmodule ExAzureSpeech.SpeechToText.RecognizerTest do
          [process_to_stream: fn _, _ -> {:ok, [%{recognition_status: "Success"}]} end]}
       ]) do
         assert {:ok, [%{recognition_status: "Success"}]} =
-                 Recognizer.recognize_once(<<0, 1>>)
+                 Recognizer.recognize_once(<<0, 1>>, [])
 
         assert called(DynamicSupervisor.start_child(:_, :_))
         assert called(Websocket.process_to_stream(:_, :_))

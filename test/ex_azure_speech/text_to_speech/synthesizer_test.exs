@@ -15,7 +15,7 @@ defmodule ExAzureSpeech.TextToSpeech.SynthesizerTest do
       {Websocket, [], [synthesize: fn _, _, _ -> {:ok, [<<0, 1>>]} end]}
     ]) do
       assert {:ok, [<<0, 1>>]} =
-               Synthesizer.speak_text("Hello, world!", "en-US-AriaNeural", "en-US")
+               Synthesizer.speak_text("Hello, world!", "en-US-AriaNeural", "en-US", [], [])
 
       assert called(DynamicSupervisor.start_child(:_, :_))
       assert called(Websocket.synthesize(:_, %SynthesisMessage{payload: expected_ssml()}, :_))
@@ -31,7 +31,7 @@ defmodule ExAzureSpeech.TextToSpeech.SynthesizerTest do
       {Websocket, [], [synthesize: fn _, _, _ -> {:ok, [<<0, 1>>]} end]}
     ]) do
       assert {:ok, [<<0, 1>>]} =
-               Synthesizer.speak_ssml("should_be_ssml")
+               Synthesizer.speak_ssml("should_be_ssml", [], [])
 
       assert called(DynamicSupervisor.start_child(:_, :_))
       assert called(Websocket.synthesize(:_, %SynthesisMessage{payload: "should_be_ssml"}, :_))

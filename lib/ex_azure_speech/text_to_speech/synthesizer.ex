@@ -4,6 +4,8 @@ defmodule ExAzureSpeech.TextToSpeech.Synthesizer do
   """
   @moduledoc section: :text_to_speech
 
+  @behaviour ExAzureSpeech.TextToSpeech
+
   alias ExAzureSpeech.Common.Errors
 
   alias ExAzureSpeech.TextToSpeech.{
@@ -13,15 +15,6 @@ defmodule ExAzureSpeech.TextToSpeech.Synthesizer do
   }
 
   alias ExAzureSpeech.TextToSpeech.Messages.SynthesisMessage
-
-  @typedoc """
-  The options for the Text-to-Speech Synthesizer module.
-  """
-  @type opts() :: [
-          socket_opts: SocketConfig.t() | nil,
-          speech_synthesis_opts: SpeechSynthesisConfig.t() | nil,
-          timeout: integer() | nil
-        ]
 
   defmacrop with_connection(socket_opts, context_opts, callbacks, do: block) do
     quote do
@@ -33,54 +26,14 @@ defmodule ExAzureSpeech.TextToSpeech.Synthesizer do
     end
   end
 
-  @doc """
-  Synthesizes the given text into speech.--
-
-  Parameters:--
-  - `text`: The text to synthesize.--
-  - `voice`: The voice to use for the synthesis. E.g: en-US-AriaNeural --
-  - `language`: The language code for the synthesis. E.g: en-US --
-  - `opts`: The options for the synthesis. --
-  - `callbacks`: The callbacks for the synthesis. See `ExAzureSpeech.TextToSpeech.Websocket.callbacks()`--
-  """
-  @spec speak_text(
-          String.t(),
-          String.t(),
-          String.t(),
-          opts :: opts(),
-          callbacks :: Websocket.callbacks()
-        ) ::
-          {:ok, [binary()]}
-          | {:error,
-             Errors.Internal.t()
-             | Errors.InvalidResponse.t()
-             | Errors.Forbidden.t()
-             | NimbleOptions.ValidationError.t()}
-  def speak_text(text, voice, language, opts \\ [], callbacks \\ []),
+  @impl true
+  def speak_text(text, voice, language, opts, callbacks),
     do:
       SynthesisMessage.text(text, voice, language)
       |> speak(opts, callbacks)
 
-  @doc """
-  Synthesizes the given SSML into speech.--
-
-  Parameters:--
-  - `ssml`: The SSML to synthesize.--
-  - `opts`: The options for the synthesis.--
-  - `callbacks`: The callbacks for the synthesis. See `ExAzureSpeech.TextToSpeech.Websocket.callbacks()`.--
-  """
-  @spec speak_ssml(
-          String.t(),
-          opts :: opts(),
-          callbacks :: Websocket.callbacks()
-        ) ::
-          {:ok, [binary()]}
-          | {:error,
-             Errors.Internal.t()
-             | Errors.InvalidResponse.t()
-             | Errors.Forbidden.t()
-             | NimbleOptions.ValidationError.t()}
-  def speak_ssml(ssml, opts \\ [], callbacks \\ []),
+  @impl true
+  def speak_ssml(ssml, opts, callbacks),
     do: SynthesisMessage.ssml(ssml) |> speak(opts, callbacks)
 
   defp speak(synthesis_command, opts, callbacks) do

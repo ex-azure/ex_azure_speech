@@ -41,7 +41,7 @@ Supervisor.start_link(children, strategy: :one_for_one)
 
 #### Example
 ```elixir
-File.stream!("test.wav") |> Recognizer.recognize_once()
+File.stream!("test.wav") |> SpeechToText.recognize_once()
 
 {:ok,
   [%ExAzureSpeech.SpeechToText.Responses.SpeechPhrase{
@@ -71,7 +71,7 @@ Supervisor.start_link(children, strategy: :one_for_one)
 #### Example
 
 ```elixir
-{:ok, stream} = Synthesizer.speak_text("Hello. World.", "en-US-AriaNeural", "en-US")
+{:ok, stream} = TextToSpeech.speak_text("Hello. World.", "en-US-AriaNeural", "en-US")
 
 {:ok, #Function<52.48886818/2 in Stream.resource/3>}
 

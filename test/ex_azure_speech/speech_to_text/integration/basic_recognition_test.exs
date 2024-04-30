@@ -3,8 +3,8 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
 
   @moduletag :integration
 
-  alias ExAzureSpeech.SpeechToText.Recognizer
-  alias ExAzureSpeech.SpeechToText.SpeechContextConfig
+  alias ExAzureSpeech.SpeechToText
+  alias ExAzureSpeech.SpeechToText.{Recognizer, SpeechContextConfig}
   alias ExAzureSpeech.Common.BitUtils
 
   setup_all do
@@ -42,7 +42,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
                   speaker_id: nil
                 }
               ]} =
-               Recognizer.recognize_once(stream,
+               SpeechToText.recognize_once(stream,
                  socket_opts: [
                    language: "en-US"
                  ]
@@ -370,7 +370,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
                   speaker_id: nil
                 }
               ]} =
-               Recognizer.recognize_once(file_stream,
+               SpeechToText.recognize_once(file_stream,
                  speech_context_opts: opts,
                  socket_opts: [language: "en-US"]
                )
@@ -382,7 +382,7 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
       file_stream = File.stream!(file_path, [], 32_768)
 
       {:ok, results} =
-        Recognizer.recognize_continous(
+        SpeechToText.recognize_continous(
           file_stream,
           []
         )
