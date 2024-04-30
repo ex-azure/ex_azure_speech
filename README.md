@@ -1,5 +1,8 @@
 # ExAzureSpeech
 
+[![Hex](https://img.shields.io/hexpm/v/ex_azure_speech?style=flat-square)](https://hex.pm/packages/ex_azure_speech)
+[![.github/workflows/build_and_test.yaml](https://github.com/YgorCastor/ex_azure_speech/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/YgorCastor/ex_azure_speech/actions/workflows/build_and_test.yaml)
+
 The non-official Elixir implementation for Azure Cognitive Services Speech SDK. This project aims to provide all the functionalities described in the [official speech sdk](https://learn.microsoft.com/en-gb/azure/ai-services/speech-service/) for Elixir Projects.
 
 ## Getting Started
@@ -54,13 +57,36 @@ File.stream!("test.wav") |> Recognizer.recognize_once()
   }]}
 ```
 
+### Text-to-Speech
+
+To configure the text-to-speech module, you need to add the following module to your supervision tree.
+```elixir
+children = [
+  ExAzureSpeech.TextToSpeech.Synthesizer
+]
+
+Supervisor.start_link(children, strategy: :one_for_one)
+```
+
+#### Example
+
+```elixir
+{:ok, stream} = Synthesizer.speak_text("Hello. World.", "en-US-AriaNeural", "en-US")
+
+{:ok, #Function<52.48886818/2 in Stream.resource/3>}
+
+stream
+|> Stream.into(File.stream!("hello_world.wav"))
+|> Stream.run()
+```
+
 ## Readiness
 
 This library is still in continuous development, so contracts and APIs may change considerably. Please, use it at your own risk.
 
 ## Roadmap
 
-- Text-to-Speech
+- ~~Text-to-Speech~~
 - Translation
 - Speech Intent
 - Avatars

@@ -8,7 +8,7 @@ defprotocol ExAzureSpeech.Common.Protocols.Json do
   @doc """
   Serializes the informed JSON string and coerces it into the informed struct.
   """
-  @spec from_json(String.t(), module()) :: {:ok, module()} | {:error, InvalidResponse.t()}
+  @spec from_json(String.t(), module()) :: {:ok, struct()} | {:error, InvalidResponse.t()}
   def from_json(json, struct)
 end
 

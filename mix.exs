@@ -28,12 +28,14 @@ defmodule ExAzureSpeech.MixProject do
         groups_for_modules: [
           Authentication: &(&1[:section] == :auth),
           Common: &(&1[:section] == :common),
-          "Speech-To-Text": &(&1[:section] == :speech_to_text)
+          "Speech-To-Text": &(&1[:section] == :speech_to_text),
+          "Text-To-Speech": &(&1[:section] == :text_to_speech)
         ],
         nest_modules_by_prefix: [
           ExAzureSpeech.Common,
           ExAzureSpeech.Authentication,
-          ExAzureSpeech.SpeechToText
+          ExAzureSpeech.SpeechToText,
+          ExAzureSpeech.TextToSpeech
         ]
       ]
     ]

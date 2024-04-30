@@ -8,7 +8,9 @@ defmodule ExAzureSpeech.Common.ConnectionState do
             responses: [],
             context: nil,
             command_queue: :queue.new(),
+            subscriber: nil,
             audio_stream: nil,
+            callbacks: [],
             current_stage: nil,
             last_received_message_timestamp: nil,
             telemetry: []
@@ -28,9 +30,11 @@ defmodule ExAzureSpeech.Common.ConnectionState do
   state: The current state of the connection.  
   responses: List of responses.  
   command_queue: Queue of commands that will be executed in the event_loop.--
+  subscriber: The pid of the subscriber.  
   context: The context data of the connection.  
   audio_stream: A ReplayableAudioStream to read audio data.  
   current_stage: The current stage of the websocket.  
+  callbacks: List of callbacks.  
   last_received_message_timestamp: The timestamp of the last received message from the server.  
   telemetry: List of telemetry data.  
   """
@@ -39,9 +43,11 @@ defmodule ExAzureSpeech.Common.ConnectionState do
           state: state(),
           responses: list({:error, term()} | {atom(), term()}),
           command_queue: :queue.queue(),
+          subscriber: nil | pid(),
           context: nil | map(),
           audio_stream: nil | ReplayableAudioStream.t(),
           current_stage: nil | atom(),
+          callbacks: list({atom(), function()}),
           last_received_message_timestamp: nil | DateTime.t(),
           telemetry: list({String.t(), String.t()})
         }
