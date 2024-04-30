@@ -38,6 +38,19 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
       assert 81 == Enum.to_list(stream) |> Enum.count()
     end
 
+    test "should the ssml be invalid, an error should be in the stream" do
+      ssml = SSML.invalid_sample()
+      {:ok, stream} = Synthesizer.speak_ssml(ssml)
+
+      assert [
+               %ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError{
+                 reason:
+                   "Starting September 1st, 2021 standard voices will no longer be supported for new users. Please use n",
+                 class: :internal
+               }
+             ] = Enum.to_list(stream)
+    end
+
     test "should trigger the callbacks" do
       ssml = SSML.sample()
       pid = self()

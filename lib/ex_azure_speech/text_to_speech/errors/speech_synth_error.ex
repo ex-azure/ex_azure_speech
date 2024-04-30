@@ -1,14 +1,14 @@
-defmodule ExAzureSpeech.SpeechToText.Errors.SpeechRecognitionFailed do
+defmodule ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError do
   @moduledoc """
   This error fires when the Speech Service fails to recognize a speech input.
   """
-  @moduledoc section: :speech_to_text
+  @moduledoc section: :text_to_speech
   use Splode.Error, fields: [:reason], class: :internal
 
   @type t() :: Splode.Error.t()
 
   @doc false
   def message(%{reason: reason}) do
-    "Failed to recognize speech: #{reason}"
+    "Failed to synthesize speech: #{reason}"
   end
 end

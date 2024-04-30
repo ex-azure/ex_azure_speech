@@ -29,10 +29,10 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
 
   alias ExAzureSpeech.Common.Errors.{
     FailedToDispatchCommand,
-    WebsocketConnectionFailed,
-    Internal
+    WebsocketConnectionFailed
   }
 
+  alias ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError
   alias ExAzureSpeech.TextToSpeech.Messages.{SynthesisContextMessage, SynthesisMessage}
   alias ExAzureSpeech.TextToSpeech.Responses.AudioMetadata
   alias ExAzureSpeech.TextToSpeech.{SocketConfig, SpeechSynthesisConfig}
@@ -106,7 +106,9 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
   Synthesises the given text using the Azure Text to Speech service.
   """
   @spec synthesize(pid(), SynthesisMessage.t(), (pid() -> any())) ::
-          {:ok, Enumerable.t()} | {:error, term()}
+          {:ok, Enumerable.t()}
+          | {:error,
+             FailedToDispatchCommand.t() | SpeechSynthError.t() | WebsocketConnectionFailed.t()}
   def synthesize(pid, command, close_connection_callback) do
     with :ok <- websocket_started?(pid),
          {:ok, _} <- send_config_message(pid),
@@ -125,26 +127,8 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
 
   defp stream_responses(pid, close_connection_callback) do
     Stream.resource(
-      fn ->
-        []
-      end,
-      fn _ ->
-        send(pid, {:command, :get_response, caller_pid: self()})
-
-        receive do
-          :empty ->
-            {[], []}
-
-          :end_of_synthesis ->
-            {:halt, []}
-
-          {:synthesis, response} ->
-            {[response.payload], []}
-
-          {:error, reason} ->
-            {:halt, reason}
-        end
-      end,
+      fn -> :ok end,
+      fn acc -> get_response(acc, pid) end,
       fn _ -> close_connection_callback.(pid) end
     )
   end
@@ -173,6 +157,29 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
     _ ->
       {:error,
        FailedToDispatchCommand.exception(command: :update_connection_context, websocket_pid: pid)}
+  end
+
+  defp get_response(:error, _), do: {:halt, :error}
+
+  defp get_response(:ok, pid) do
+    send(pid, {:command, :get_response, caller_pid: self()})
+
+    receive do
+      :empty ->
+        {[], :ok}
+
+      :end_of_synthesis ->
+        {:halt, :ok}
+
+      {:synthesis, response} ->
+        {[response.payload], :ok}
+
+      {:error, reason} ->
+        {[reason], :error}
+    end
+  rescue
+    _ ->
+      {:error, FailedToDispatchCommand.exception(command: :get_response, websocket_pid: pid)}
   end
 
   @doc false
@@ -237,22 +244,13 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
   @doc false
   def handle_info(
         {:command, :get_response, caller_pid: from},
-        %ConnectionState{responses: []} = state
+        %ConnectionState{} = state
       ) do
-    send(from, :empty)
-    {:ok, state}
-  end
-
-  @doc false
-  def handle_info(
-        {:command, :get_response, caller_pid: from},
-        %ConnectionState{responses: responses} = state
-      ) do
-    Enum.each(responses, fn response ->
-      send(from, response)
-    end)
-
-    {:ok, %ConnectionState{state | responses: []}}
+    {:ok,
+     %ConnectionState{
+       state
+       | command_queue: :queue.in({:internal, {:get_response, from}}, state.command_queue)
+     }}
   end
 
   @doc false
@@ -296,10 +294,10 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
       connection_id: state.connection_id
     )
 
-    {:reconnect,
+    {:ignore,
      %ConnectionState{
        state
-       | responses: state.responses ++ [{:error, Internal.exception(reason)}]
+       | responses: state.responses ++ [{:error, SpeechSynthError.exception(reason: reason)}]
      }}
   end
 
@@ -308,6 +306,26 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
 
   defp process_command(%SocketMessage{message_type: 1} = socket_message, state),
     do: {:reply, {:binary, SocketMessage.serialize(socket_message)}, state}
+
+  defp process_command(
+         {:internal, {:get_response, from}},
+         %ConnectionState{responses: []} = state
+       ) do
+    send(from, :empty)
+
+    {:ok, state}
+  end
+
+  defp process_command(
+         {:internal, {:get_response, from}},
+         %ConnectionState{responses: responses} = state
+       ) do
+    Enum.each(responses, fn response ->
+      send(from, response)
+    end)
+
+    {:ok, %ConnectionState{state | responses: []}}
+  end
 
   defp process_command(
          {:internal, :notify_end},
