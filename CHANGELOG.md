@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/YgorCastor/ex_azure_speech/compare/v0.1.1...v0.2.0) (2024-04-30)
+
+
+### Features
+
+* **text_to_speech:** Implements text-to-speech ([#16](https://github.com/YgorCastor/ex_azure_speech/issues/16)) ([46c058e](https://github.com/YgorCastor/ex_azure_speech/commit/46c058e0487ca02299c39714ad72105ac4795455))
+
+
+### Bug Fixes
+
+* Improved handling of errors ([2f4fde4](https://github.com/YgorCastor/ex_azure_speech/commit/2f4fde43b937c13cad10fe57b10e7d2e86e18ac3))
+
 ## [0.1.1](https://github.com/YgorCastor/ex_azure_speech/compare/v0.1.0...v0.1.1) (2024-04-25)
 
 
