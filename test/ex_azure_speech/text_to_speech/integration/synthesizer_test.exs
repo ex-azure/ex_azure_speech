@@ -39,14 +39,27 @@ defmodule ExAzureSpeech.TextToSpeech.Integration.SynthesizerTest do
       assert 81 == Enum.to_list(stream) |> Enum.count()
     end
 
-    test "should the ssml be invalid, an error should be in the stream" do
-      ssml = SSML.invalid_sample()
+    test "should the ssml uses an invalid voice, an error should be in the stream" do
+      ssml = SSML.invalid_voice_sample()
       {:ok, stream} = TextToSpeech.speak_ssml(ssml)
 
       assert [
                %ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError{
                  reason:
                    "Starting September 1st, 2021 standard voices will no longer be supported for new users. Please use n",
+                 class: :internal
+               }
+             ] = Enum.to_list(stream)
+    end
+
+    test "should the ssml uses an invalid phoneme, an error should be in the stream" do
+      ssml = SSML.invalid_phoneme_sample()
+      {:ok, stream} = TextToSpeech.speak_ssml(ssml)
+
+      assert [
+               %ExAzureSpeech.TextToSpeech.Errors.SpeechSynthError{
+                 reason:
+                   "Status(StatusCode=\"FailedPrecondition\", Detail=\"SSML parsing error: 0x8004507A - Unknown phoneme\")",
                  class: :internal
                }
              ] = Enum.to_list(stream)
