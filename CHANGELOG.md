@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/ex-azure/ex_azure_speech/compare/v0.2.0...v0.2.1) (2024-07-29)
+
+
+### Bug Fixes
+
+* **audio-recognition:** EndOfDictation messages replaced last detected recognition. ([#39](https://github.com/ex-azure/ex_azure_speech/issues/39)) ([68f6aea](https://github.com/ex-azure/ex_azure_speech/commit/68f6aeaaf7df9c28b92c701dd01afc23e00c4bad))
+* **deps:** Dependencies update ([09d77ce](https://github.com/ex-azure/ex_azure_speech/commit/09d77ced08b6c9bee259ba65b2f581cc3d96ea88))
+
 ## [0.2.0](https://github.com/YgorCastor/ex_azure_speech/compare/v0.1.1...v0.2.0) (2024-04-30)
 
 
