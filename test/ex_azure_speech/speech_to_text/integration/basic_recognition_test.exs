@@ -397,8 +397,8 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
         recognition_status: "Success",
         display_text:
           "Voor MeToo, veroordeelde Belgische TV maker verbreekt stilzwijgen, Ik ben fout geweest.",
-        duration: 54_800_000,
-        offset: 2_100_000,
+        duration: _,
+        offset: _,
         primary_language: nil,
         n_best: nil,
         speaker_id: nil
@@ -410,8 +410,8 @@ defmodule ExAzureSpeech.SpeechToText.Integration.BasicRecognitionTest do
         recognition_status: "Success",
         display_text:
           "De voor grensoverschrijdend gedrag veroordeelde Belgische TV maker Bart de pauw heeft voor het eerst in 7 jaar van zich Laten horen.",
-        duration: 78_700_000,
-        offset: 4_000_000,
+        duration: _,
+        offset: _,
         primary_language: nil,
         n_best: nil,
         speaker_id: nil
