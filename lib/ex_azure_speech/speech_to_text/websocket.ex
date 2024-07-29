@@ -393,7 +393,7 @@ defmodule ExAzureSpeech.SpeechToText.Websocket do
         {:ok,
          %ConnectionState{
            state
-           | responses: [{:recognition, payload}],
+           | responses: state.responses ++ [{:recognition, payload}],
              current_stage: :speech_phrase
          }}
 

@@ -42,7 +42,7 @@ defmodule ExAzureSpeech.SpeechToText.SocketConfig do
             ],
             recognition_mode: [
               type: {:in, [:interactive, :conversation, :dictation]},
-              default: :interactive,
+              default: :conversation,
               doc: """
               The recognition mode to be used. `:interactive` is optimized for short phrases, `:conversation` is optimized for conversational speech, and `:dictation` is optimized for long-form speech.
               """
