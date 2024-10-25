@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/ex-azure/ex_azure_speech/compare/v0.2.1...v0.2.2) (2024-10-25)
+
+
+### Bug Fixes
+
+* Update dependencies ([#43](https://github.com/ex-azure/ex_azure_speech/issues/43)) ([3f35feb](https://github.com/ex-azure/ex_azure_speech/commit/3f35feb52a8b362238f5dfe2f9e276edf5902e82))
+* Websocket connections should be closed on any error ([a9b8125](https://github.com/ex-azure/ex_azure_speech/commit/a9b8125f2612468b623c34688286e0737ef89416))
+
 ## [0.2.1](https://github.com/ex-azure/ex_azure_speech/compare/v0.2.0...v0.2.1) (2024-07-29)
 
 
