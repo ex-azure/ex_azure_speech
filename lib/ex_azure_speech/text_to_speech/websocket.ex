@@ -115,6 +115,10 @@ defmodule ExAzureSpeech.TextToSpeech.Websocket do
          {:ok, _} <- update_connection_context(pid),
          {:ok, _} <- start_synthesis(pid, command) do
       {:ok, stream_responses(pid, close_connection_callback)}
+    else
+      err ->
+        close_connection_callback.(pid)
+        err
     end
   end
 
